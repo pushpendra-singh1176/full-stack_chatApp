@@ -21,7 +21,7 @@ pipeline {
           sh '''
           echo "===== Backend Sonar Scan ====="
           cd backend
-          sonar-scanner -Dsonar.projectKey=chatapp-backend -Dsonar.sources=. \-Dsonar.language=js
+          sonar-scanner -Dsonar.projectKey=chatapp-backend -Dsonar.sources=. -Dsonar.language=js
 
           cd ..
 
