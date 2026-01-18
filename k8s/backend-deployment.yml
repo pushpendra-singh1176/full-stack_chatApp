@@ -10,8 +10,6 @@ spec:
       app: backend
   template:
     metadata:
-      name: backend-pod
-      namespace: chat-app
       labels: 
         app: backend
     spec:
@@ -22,13 +20,16 @@ spec:
         - containerPort: 5001
         env:
         - name: NODE_ENV
-          value: production
+          value: "production"
+
         - name: MONGODB_URI
-          value: "mongodb://mongoadmin:secret@mongodb:27017/dbname?authSource=admin"
-        - name: chatapp_secret_2026
+          value: "mongodb://mongoadmin:secret@mongo:27017/admin?authSource=admin"
+
+        - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: chatapp-secrets
-              key: jwt 
+              key: jwt
+
         - name: PORT
           value: "5001"
