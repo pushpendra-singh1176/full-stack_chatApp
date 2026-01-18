@@ -78,8 +78,8 @@ pipeline {
     stage('Git Commit (GitOps)') {
       steps {
         sh '''
-        git config user.name "jenkins"
-        git config user.email "jenkins@ci.com"
+        git config user.name "Pushpendra Singh"
+        git config user.email "pushpendrasingh0549@gmail.com"
         git add k8s/
         git commit -m "Deploy FE + BE image tag ${IMAGE_TAG}"
         git push origin main
