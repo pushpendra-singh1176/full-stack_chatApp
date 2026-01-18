@@ -18,9 +18,9 @@ services:
     environment:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://mongoadmin:secret@mongodb:27017/dbname?authSource=admin
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=chatapp_secret_2026
       - PORT=5001
-
+      
     depends_on:
       - mongodb
     networks:
