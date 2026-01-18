@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Make sure 'sonar-scanner' is configured in Jenkins Global Tool Configuration
-        SONAR_SCANNER = tool 'sonar-scanner'
+        SONAR_SCANNER = tool 'Sonar'
         IMAGE_TAG     = "${BUILD_NUMBER}"
         BACKEND_IMAGE  = "xerox2/chatapp-backend"
         FRONTEND_IMAGE = "xerox2/chatapp-frontend"
