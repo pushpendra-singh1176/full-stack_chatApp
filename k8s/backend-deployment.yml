@@ -25,7 +25,7 @@ spec:
           value: production
         - name: MONGODB_URI
           value: "mongodb://mongoadmin:secret@mongodb:27017/dbname?authSource=admin"
-        - name: JWT_SECRET
+        - name: chatapp_secret_2026
           valueFrom:
             secretKeyRef:
               name: chatapp-secrets
