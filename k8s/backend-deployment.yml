@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: chatapp-backend
-        image: trainwithshubham/chatapp-backend:latest
+        image: xerox2/chatapp-backend:latest
         ports:
         - containerPort: 5001
         env:
