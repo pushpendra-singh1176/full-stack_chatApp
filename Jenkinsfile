@@ -15,24 +15,27 @@ pipeline {
       }
     }
 
-    stage('Sonar Scan (Backend + Frontend)') {
+    stage('Sonar Scan - Backend & Frontend') {
       steps {
         withSonarQubeEnv('Sonar') {
           sh '''
-          echo "Backend Scan"
+          echo "===== Backend Sonar Scan ====="
           cd backend
-          mvn clean verify sonar:sonar -Dsonar.projectKey=chatapp-backend
+          sonar-scanner -Dsonar.projectKey=chatapp-backend -Dsonar.sources=. \-Dsonar.language=js
+
           cd ..
 
-          echo "Frontend Scan"
+          echo "===== Frontend Sonar Scan ====="
           cd frontend
           sonar-scanner \
             -Dsonar.projectKey=chatapp-frontend \
-            -Dsonar.sources=.
+            -Dsonar.sources=. \
+            -Dsonar.language=js
           '''
         }
       }
     }
+
 
     stage('Quality Gate') {
       steps {
