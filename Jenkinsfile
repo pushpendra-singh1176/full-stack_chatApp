@@ -2,33 +2,88 @@ pipeline {
   agent any
 
   environment {
-    SONAR_HOME = tool "sonarqube"
+    IMAGE_TAG = "${BUILD_NUMBER}"
+    BACKEND_IMAGE  = "xerox2/chatapp-backend"
+    FRONTEND_IMAGE = "xerox2/chatapp-frontend"
   }
 
   stages {
-    stage('Clean UP') {
+
+    stage('Checkout') {
       steps {
-        cleanWs()
+        checkout scm
       }
     }
-    stage('Code Check out') {
+
+    stage('Sonar Scan (Backend + Frontend)') {
       steps {
-        git branch: 'master',
-          url: 'https://github.com/iemafzalhassan/full-stack_chatApp.git'
-      }
-    }
-    stage('Code Quality') {
-      steps {
-        withSonarQubeEnv("sonarqube") {
-          sh "$SONAR_HOME/bin/sonar-scanner -Dsonar.projectName=chat-app -Dsonar.projectKey=chat-app -X"
+        withSonarQubeEnv('Sonar') {
+          sh '''
+          echo "Backend Scan"
+          cd backend
+          mvn clean verify sonar:sonar -Dsonar.projectKey=chatapp-backend
+          cd ..
+
+          echo "Frontend Scan"
+          cd frontend
+          sonar-scanner \
+            -Dsonar.projectKey=chatapp-frontend \
+            -Dsonar.sources=.
+          '''
         }
       }
     }
-    stage('Deploy') {
+
+    stage('Quality Gate') {
       steps {
-        script {
-          sh 'docker compose up -d --build'
+        waitForQualityGate abortPipeline: true
+      }
+    }
+
+    stage('Build Docker Images') {
+      steps {
+        sh '''
+        docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} backend/
+        docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} frontend/
+        '''
+      }
+    }
+
+    stage('Push Docker Images') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'dockerhub-creds',
+          usernameVariable: 'DOCKER_USER',
+          passwordVariable: 'DOCKER_PASS'
+        )]) {
+          sh '''
+          echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+          docker push ${BACKEND_IMAGE}:${IMAGE_TAG}
+          docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
+          '''
         }
+      }
+    }
+
+    stage('Update Kubernetes Manifests') {
+      steps {
+        sh '''
+        sed -i 's|image: .*chatapp-backend:.*|image: xerox2/chatapp-backend:'"${IMAGE_TAG}"'|g' k8s/backend-deployment.yaml
+        sed -i 's|image: .*chatapp-frontend:.*|image: xerox2/chatapp-frontend:'"${IMAGE_TAG}"'|g' k8s/frontend-deployment.yaml
+        '''
+      }
+    }
+
+    stage('Git Commit (GitOps)') {
+      steps {
+        sh '''
+        git config user.name "jenkins"
+        git config user.email "jenkins@ci.com"
+        git add k8s/
+        git commit -m "Deploy FE + BE image tag ${IMAGE_TAG}"
+        git push origin main
+        '''
       }
     }
   }
