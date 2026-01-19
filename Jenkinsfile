@@ -101,10 +101,11 @@ pipeline {
             sh "docker logout || true"
         }
         success {
-            echo "Pipeline Successful - Images Pushed and K8s Updated!"
+            echo "CI Pipeline Successful! Now triggering CD Pipeline..."
+            build job: 'ChatApp-CD', wait: false
         }
         failure {
-            echo "Pipeline Failed - Check logs for errors."
+            echo "Pipeline Failed - CD pipeline will not be triggered ! Check logs for errors."
         }
     }
 }
