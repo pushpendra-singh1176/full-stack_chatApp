@@ -73,8 +73,8 @@ pipeline {
         stage('Update Kubernetes Manifests') {
             steps {
                 sh """
-                    sed -i 's|image: .*chatapp-backend:.*|image: ${BACKEND_IMAGE}:${IMAGE_TAG}|g' k8s/backend-deployment.yaml
-                    sed -i 's|image: .*chatapp-frontend:.*|image: ${FRONTEND_IMAGE}:${IMAGE_TAG}|g' k8s/frontend-deployment.yaml
+                    sed -i 's|image: .*chatapp-backend:.*|image: ${BACKEND_IMAGE}:${IMAGE_TAG}|g' k8s/backend-deployment.yml
+                    sed -i 's|image: .*chatapp-frontend:.*|image: ${FRONTEND_IMAGE}:${IMAGE_TAG}|g' k8s/frontend-deployment.yml
                 """
             }
         }
