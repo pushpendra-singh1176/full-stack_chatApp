@@ -85,7 +85,7 @@ pipeline {
                 sh """
                     git config user.name "Pushpendra Singh"
                     git config user.email "pushpendrasingh0549@gmail.com"
-                    git add k8s/*.yaml
+                    git add k8s/*.yml
                     git commit -m "Deploy FE + BE image tag ${IMAGE_TAG}"
                     git push origin main
                 """
