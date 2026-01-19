@@ -1,0 +1,85 @@
+pipeline {
+    agent any
+
+    environment {
+        // --- User Configuration Section ---
+        APP_NAME      = "chat-app"
+        TARGET_NS     = "chat-app"
+        CLUSTER_NAME  = "argocd-cluster"
+        
+        // --- Repository Configuration ---
+        REPO_URL      = "https://github.com/pushpendra-singh1176/full-stack_chatApp.git"
+        REPO_PATH     = "k8s"
+    }
+
+    stages {
+        stage('ArgoCD Infrastructure Setup') {
+            steps {
+                script {
+                    // Extract ArgoCD initial admin password from Kubernetes secrets
+                    def ARGO_PWD = sh(
+                        script: "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d", 
+                        returnStdout: true
+                    ).trim()
+                    
+                    // Detect the current Kubernetes context dynamically
+                    def CLUSTER_CONTEXT = sh(
+                        script: "kubectl config current-context", 
+                        returnStdout: true
+                    ).trim()
+
+                    sh """
+                        # Authenticate with ArgoCD Server
+                        argocd login localhost:8080 --username admin --password '${ARGO_PWD}' --insecure
+
+                        # Validate if the cluster is already managed by ArgoCD
+                        if argocd cluster list | grep -q "${CLUSTER_CONTEXT}"; then
+                            echo "INFO: Cluster '${CLUSTER_CONTEXT}' is already managed. Skipping registration."
+                        else
+                            echo "INFO: Registering new cluster: ${CLUSTER_NAME}"
+                            argocd cluster add ${CLUSTER_CONTEXT} --name ${CLUSTER_NAME} --insecure --yes
+                        fi
+
+                        # Check for existing application or initialize a new deployment
+                        if argocd app get ${APP_NAME} > /dev/null 2>&1; then
+                            echo "INFO: Application '${APP_NAME}' already exists. Proceeding to sync."
+                        else
+                            echo "INFO: Initializing new ArgoCD Application: ${APP_NAME}"
+                            argocd app create ${APP_NAME} \
+                                --repo ${REPO_URL} \
+                                --path ${REPO_PATH} \
+                                --dest-server https://kubernetes.default.svc \
+                                --dest-namespace ${TARGET_NS} \
+                                --sync-policy automated \
+                                --sync-option CreateNamespace=true \
+                                --self-heal \
+                                --auto-prune \
+                                --upsert
+                        fi
+                    """
+                }
+            }
+        }
+
+        stage('Sync & Deployment Verification') {
+            steps {
+                sh """
+                    echo "Starting Manual Synchronization for ${APP_NAME}..."
+                    argocd app sync ${APP_NAME}
+                    
+                    echo "Verifying Deployment Health..."
+                    argocd app wait ${APP_NAME} --health --timeout 300
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "SUCCESS: ${APP_NAME} has been successfully deployed to ${CLUSTER_NAME}."
+        }
+        failure {
+            echo "ERROR: Deployment failed. Please check the ArgoCD logs or Jenkins console output."
+        }
+    }
+}
