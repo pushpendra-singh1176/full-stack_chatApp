@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: chatapp-frontend
-        image: xerox2/chatapp-frontend:latest
+        image: xerox2/chatapp-frontend:10
         ports:
         - containerPort: 80
         env:

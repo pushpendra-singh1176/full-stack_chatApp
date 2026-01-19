@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: chatapp-backend
-        image: xerox2/chatapp-backend:latest
+        image: xerox2/chatapp-backend:10
         ports:
         - containerPort: 5001
         env:
