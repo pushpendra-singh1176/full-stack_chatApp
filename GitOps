@@ -30,7 +30,7 @@ pipeline {
 
                     sh """
                         # Authenticate with ArgoCD Server
-                        argocd login localhost:8080 --username admin --password '${ARGO_PWD}' --insecure
+                        argocd login 3.88.130.87:8081 --username admin --password '${ARGO_PWD}' --insecure
 
                         # Validate if the cluster is already managed by ArgoCD
                         if argocd cluster list | grep -q "${CLUSTER_CONTEXT}"; then
@@ -48,8 +48,8 @@ pipeline {
                             argocd app create ${APP_NAME} \
                                 --repo ${REPO_URL} \
                                 --path ${REPO_PATH} \
-                                --dest-server https://kubernetes.default.svc \
-                                --dest-namespace ${TARGET_NS} \
+                                --dest-server https://172.31.89.30:33893 \
+                                --dest-namespace chat-app\
                                 --sync-policy automated \
                                 --sync-option CreateNamespace=true \
                                 --self-heal \
