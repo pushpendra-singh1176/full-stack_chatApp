@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        // Make sure 'sonar-scanner' is configured in Jenkins Global Tool Configuration
-        SONAR_SCANNER = tool 'Sonar'
-        IMAGE_TAG     = "${BUILD_NUMBER}"
+        // 'Sonar' should match the name in Jenkins Global Tool Configuration
+        SONAR_SCANNER  = tool 'Sonar'
+        IMAGE_TAG      = "${BUILD_NUMBER}"
         BACKEND_IMAGE  = "xerox2/chatapp-backend"
         FRONTEND_IMAGE = "xerox2/chatapp-frontend"
     }
@@ -23,14 +23,14 @@ pipeline {
                         echo "===== Backend Sonar Scan ====="
                         cd backend
                         ${SONAR_SCANNER}/bin/sonar-scanner \
-                          -Dsonar.projectKey=chatapp-backend \
-                          -Dsonar.sources=.
+                            -Dsonar.projectKey=chatapp-backend \
+                            -Dsonar.sources=.
 
-                        cd ../frontend
                         echo "===== Frontend Sonar Scan ====="
+                        cd ../frontend
                         ${SONAR_SCANNER}/bin/sonar-scanner \
-                          -Dsonar.projectKey=chatapp-frontend \
-                          -Dsonar.sources=.
+                            -Dsonar.projectKey=chatapp-frontend \
+                            -Dsonar.sources=.
                     """
                 }
             }
@@ -38,7 +38,6 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                // Wait for SonarQube to process results
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
                 }
@@ -81,21 +80,31 @@ pipeline {
 
         stage('Git Commit (GitOps)') {
             steps {
-                // Using credentials for git push if needed, or ensuring SSH is set up
-                sh """
-                    git config user.name "Pushpendra Singh"
-                    git config user.email "pushpendrasingh0549@gmail.com"
-                    git add k8s/*.yml
-                    git commit -m "Deploy FE + BE image tag ${IMAGE_TAG}"
-                    git push origin main
-                """
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                    sh """
+                        git config user.name "Pushpendra Singh"
+                        git config user.email "pushpendrasingh0549@gmail.com"
+                        
+                        git remote set-url origin https://${GITHUB_TOKEN}@github.com/pushpendra-singh1176/full-stack_chatApp.git
+                        
+                        git add k8s/*.yml
+                        git commit -m "Deploy FE + BE image tag ${IMAGE_TAG}" || echo "No changes to commit"
+                        git push origin HEAD:main
+                    """
+                }
             }
         }
     }
-    
+
     post {
         always {
-            sh "docker logout"
+            sh "docker logout || true"
+        }
+        success {
+            echo "Pipeline Successful - Images Pushed and K8s Updated!"
+        }
+        failure {
+            echo "Pipeline Failed - Check logs for errors."
         }
     }
 }
